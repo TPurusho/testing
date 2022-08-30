@@ -1,0 +1,216 @@
+select count(*)
+from
+(
+select c.CID,
+c.cname as CNAME,
+d.DID,
+d.dname DNAME,
+C.CSALE,
+D.DSALE
+from IN1544.cats c
+left join
+IN1544.depts d
+on c.DID=D.DID
+) SRC
+
+TGT
+
+select count(*)
+from
+Dim_Cat_Dept
+
+
+
+
+select e.parentemployeekey,c.Name, 
+e.HireDate,e.BirthDate,
+c.LoginID,
+c.Phone,
+c.emailaddress,
+case
+when e.maritalstatus='S' then 'SINGLE'
+when e.maritalstatus='M' then 'MARRIED'
+end MaritalStatus,
+case
+when e.Gender='M' then 'Male'
+when e.Gender='F' then 'Female'
+end Gender,
+d.name DepartmentName
+from BCMPQA.Employee e join BCMPQA.CONTACT c on e.contactid=c.contactid
+join BCMPQA.EmployeeDepartmentHistory ed on e.employeeid=ed.employeeid
+join BCMPQA.Department d on d.departmentid=ed.departmentid 
+
+
+-------------ROWCOUNT---------------------
+
+select count(*) from (
+select e.EmployeeID parentemployeekey,concat(c.firstname, c.lastname) Name, 
+cast(format(e.hiredate, 'dd-MMM-yyyy') as varchar) HireDate, cast(format(e.birthdate, 'dd-MMM-yyyy') as varchar) BirthDate,
+concat(substring(c.lastname,1,1), c.firstname) LoginID,
+iif(charindex('(',phone)!=0,'N/A',phone) Phone,
+isnull(c.emailaddress,'N/A') emailaddress,
+case
+when e.maritalstatus='S' then 'SINGLE'
+when e.maritalstatus='M' then 'MARRIED'
+end MaritalStatus,
+case
+when e.Gender='M' then 'Male'
+when e.Gender='F' then 'Female'
+end Gender,
+d.name DepartmentName
+from BCMPQA.Employee e join BCMPQA.CONTACT c on e.contactid=c.contactid
+join BCMPQA.EmployeeDepartmentHistory ed on e.employeeid=ed.employeeid
+join BCMPQA.Department d on d.departmentid=ed.departmentid ) SRG;
+
+SRC_COUNT=296
+
+SELECT COUNT(*) FROM Target_DimEmployee;
+
+TARGET_COUNT=296
+
+--------------------ROWCOUNT GROUPBY------------------------
+
+
+select count(*),NAME from (
+select e.EmployeeID parentemployeekey,concat(c.firstname, c.lastname) Name, 
+cast(format(e.hiredate, 'dd-MMM-yyyy') as varchar) HireDate, cast(format(e.birthdate, 'dd-MMM-yyyy') as varchar) BirthDate,
+concat(substring(c.lastname,1,1), c.firstname) LoginID,
+iif(charindex('(',phone)!=0,'N/A',phone) Phone,
+isnull(c.emailaddress,'N/A') emailaddress,
+case
+when e.maritalstatus='S' then 'SINGLE'
+when e.maritalstatus='M' then 'MARRIED'
+end MaritalStatus,
+case
+when e.Gender='M' then 'Male'
+when e.Gender='F' then 'Female'
+end Gender,
+d.name DepartmentName
+from BCMPQA.Employee e join BCMPQA.CONTACT c on e.contactid=c.contactid
+join BCMPQA.EmployeeDepartmentHistory ed on e.employeeid=ed.employeeid
+join BCMPQA.Department d on d.departmentid=ed.departmentid ) SRG
+GROUP BY NAME;
+
+SRC_COUNT=290
+
+
+SELECT COUNT(*),NAME FROM Target_DimEmployee
+GROUP BY NAME;
+
+TARGET_COUNT=290
+
+
+-------------------------DISTINCT RECORD CHECK------------------
+
+select count(*) from (
+select e.EmployeeID parentemployeekey,concat(c.firstname, c.lastname) Name, 
+cast(format(e.hiredate, 'dd-MMM-yyyy') as varchar) HireDate, cast(format(e.birthdate, 'dd-MMM-yyyy') as varchar) BirthDate,
+concat(substring(c.lastname,1,1), c.firstname) LoginID,
+iif(charindex('(',phone)!=0,'N/A',phone) Phone,
+isnull(c.emailaddress,'N/A') emailaddress,
+case
+when e.maritalstatus='S' then 'SINGLE'
+when e.maritalstatus='M' then 'MARRIED'
+end MaritalStatus,
+case
+when e.Gender='M' then 'Male'
+when e.Gender='F' then 'Female'
+end Gender,
+d.name DepartmentName
+from BCMPQA.Employee e join BCMPQA.CONTACT c on e.contactid=c.contactid
+join BCMPQA.EmployeeDepartmentHistory ed on e.employeeid=ed.employeeid
+join BCMPQA.Department d on d.departmentid=ed.departmentid ) SRG
+GROUP BY parentemployeekey
+HAVING COUNT(*)>1
+-------NO DISTINCT RECORDS------------
+
+SELECT COUNT(*) FROM Target_DimEmployee
+GROUP BY parentemployeekey
+HAVING COUNT(*)>1;
+
+-------NO DISTINCT RECORDS------------
+
+----------------------------REFERENCE INTERGITY-----------------------------------------
+
+SELECT COUNT(*) FROM Target_DimEmployee T
+LEFT JOIN (select e.EmployeeID parentemployeekey,concat(c.firstname, c.lastname) Name, 
+cast(format(e.hiredate, 'dd-MMM-yyyy') as varchar) HireDate, cast(format(e.birthdate, 'dd-MMM-yyyy') as varchar) BirthDate,
+concat(substring(c.lastname,1,1), c.firstname) LoginID,
+iif(charindex('(',c.phone)!=0,'N/A',phone) Phone,
+isnull(c.emailaddress,'N/A') emailaddress,
+case
+when e.maritalstatus='S' then 'SINGLE'
+when e.maritalstatus='M' then 'MARRIED'
+end MaritalStatus,
+case
+when e.Gender='M' then 'Male'
+when e.Gender='F' then 'Female'
+end Gender,
+d.name DepartmentName
+from BCMPQA.Employee e join BCMPQA.CONTACT c on e.contactid=c.contactid
+join BCMPQA.EmployeeDepartmentHistory ed on e.employeeid=ed.employeeid
+join BCMPQA.Department d on d.departmentid=ed.departmentid) SRC 
+ON T.ParentEmployeeKey=src.parentemployeekey and src.DepartmentName=t.DepartmentName    #In that departmentname contains different values.
+where 
+src.name<>T.Name
+or src.hiredate<>T.hiredate
+or src.birthdate<>T.birthdate
+or src.LoginID<>T.LoginID
+or src.emailaddress<>T.emailaddress
+or src.Phone<>T.Phoneno
+or src.MaritalStatus<>t.MaritalStatus
+or src.Gender<>t.Gender
+or src.DepartmentName<>t.DepartmentName
+group by t.parentemployeekey
+
+-------------------------------Randow row check-----------------------------------------
+select e.EmployeeID parentemployeekey,concat(c.firstname, c.lastname) Name, 
+cast(format(e.hiredate, 'dd-MMM-yyyy') as varchar) HireDate, cast(format(e.birthdate, 'dd-MMM-yyyy') as varchar) BirthDate,
+concat(substring(c.lastname,1,1), c.firstname) LoginID,
+iif(charindex('(',c.phone)!=0,'N/A',phone) Phone,
+isnull(c.emailaddress,'N/A') emailaddress,
+case
+when e.maritalstatus='S' then 'SINGLE'
+when e.maritalstatus='M' then 'MARRIED'
+end MaritalStatus,
+case
+when e.Gender='M' then 'Male'
+when e.Gender='F' then 'Female'
+end Gender,
+d.name DepartmentName
+from BCMPQA.Employee e join BCMPQA.CONTACT c on e.contactid=c.contactid
+join BCMPQA.EmployeeDepartmentHistory ed on e.employeeid=ed.employeeid
+join BCMPQA.Department d on d.departmentid=ed.departmentid 
+where e.EmployeeID=106
+
+SELECT * FROM Target_DimEmployee where ParentEmployeeKey=106
+
+------------------------startficationTest---------------------------
+SELECT * FROM Target_DimEmployee;
+select * from Traget_Fact_Sales_Quota;
+
+SELECT t.employeekey,dt.timekey,dt.calendaryear,
+dt.calendarquarter,s.quantity,s.unit_price,s.salesamount from Target_DimEmployee t join [BCMPQA].[Sales_Quota] s
+on s.employeeid=t.parentemployeekey
+join [BCMPQA].[DimTime] dt
+on s.orderdate=dt.fulldatealternatekey
+
+
+SELECT sum(s.quantity),sum(s.unit_price),sum(s.salesamount)
+from Target_DimEmployee t join [BCMPQA].[Sales_Quota] s
+on s.employeeid=t.parentemployeekey
+join [BCMPQA].[DimTime] dt
+on s.orderdate=dt.fulldatealternatekey
+
+select sum(quantity),sum(unit_price),sum(salesamountquota) from Traget_Fact_Sales_Quota;
+
+------------------------startficationTest--------groupby-------------------
+SELECT sum(s.quantity),sum(s.unit_price),sum(s.salesamount)
+from Target_DimEmployee t join [BCMPQA].[Sales_Quota] s
+on s.employeeid=t.parentemployeekey
+join [BCMPQA].[DimTime] dt
+on s.orderdate=dt.fulldatealternatekey
+group by t.employeekey
+
+select sum(quantity),sum(unit_price),sum(salesamountquota) from Traget_Fact_Sales_Quota
+group by employeekey
